@@ -1,3 +1,149 @@
+# Data representation
+
+## Integers
+
+* Integers are signed variables using 2's complement: -2^(n-1) to 2^(n-1) - 1
+* C allows for variables to either be declared as signed or unsigned
+* Integers are declared signed by default
+
+# C programming
+
+## Compiling
+
+* C is a compiled language
+  * Code is genereally converte into machine code
+  * Java, by contrast, indirectly converts to machine code using byte code
+ 
+* C compiler will typically convert *.c source files into an intermediate *.o object file  
+
+# x86 ASM
+
+* Assmely: Human-readable representation of machine code
+* Machine code: what a computer actually runs
+
+* Machine language instructions are the patterns of bits that a process reads to know what to do
+* Assembly language is human-readble textual representation of machine language
+
+* Programs writen in C are generally translated to assembly and then into machine code (Remeber, C is a compiled language)
+
+## x86 Basics
+
+* An ISA is the interface that a CPU presents to the programmer
+* The ISA defines:
+  * What the CPU can do
+  * What registers it has
+  * The machine language
+
+* The ISA does not define:
+  * How to design the hardwawre
+
+### RISC
+* RISC: "Reduced Instruction Set Computer
+* ISA designed to make it easy to
+  * Build the CPU hardware
+  * make that hardware run fast
+  * write compilers that make machine code
+* A small number of instructions
+* Instructions are very simple
+
+### CISC
+* CISC: Complex Instruction Set Computer
+* ISA designed for humans to write asm
+* Lost of isntructions and complex (multi-step) instructions to shorten and simplify programs
+* x86 is CISC
+
+### x86 Registers (general)
+
+* Like MIPS, there are a set of general-purpose registers
+* Unlike MIPS, you can refer to parts of each register (partial registers)
+
+![image](https://github.com/clester331/0449-study/assets/122314614/73e8f928-3cbd-46fd-95a4-a9075d15f90b)
+
+* x86 Registers (specialized)
+* There are also registers that you cannot directly interact with
+* Like MIPS, x86 has a program counter ( %rip )
+
+* There is also a FLAGS status register which has information about the CPU state after an instruction is completed
+
+### Instruction Types
+
+* In x86 (CISC), you generally can havt instruction refer to data anywhere it is:
+
+```assembly
+mov %rbx, %rax   ; rax = rbx
+mov $0x100, %rax   ; rax = 0x100  (immediats prefixed by $)
+mov (ptr), %rax   ; rax = *ptr  (Memory load within parethases)
+mov %rax, (ptr)  ; *ptr = rax  (Memory store)
+lea (ptr), %rax
+mov %rax, 4(%rax) ; *(ptr + 4) = rax (Displacement can be -4, etc)
+```
+
+### Complex Addressing
+
+* In MIPS, you would carefully craft the set of instructions necessary to interface with an array. (RISC)
+* In x86, you can do alot with just a single instruction. (CISC)
+
+```assembly
+.data
+arr: .int 1, -2, , -4, 11
+
+.text
+
+.global _start
+
+_start:
+  lea (arr), %rbx  ; rbx = addr to arr
+  mov $2, %rdi  ; rdi = 2
+  mov (%rbx, %rdi, 4)  ; rdi = arr[2]
+  lea (%rbx, %rdi, 4), %rdi  ; rdi = &arr[2]
+```
+
+### x86 Instruction Qualifiers
+
+* In x86 you can operate on any part of a register (64b, 32b, 16b)
+  * mov -> assembler figures it out
+  * movq -> "quad word" = 64 bits
+  * movl -> "long word" = 32 bits
+  * movw -> "word" = 16 bits
+ 
+### Hello World in x86
+```assembly
+; Assumes Linux system calls
+.data
+db: .asciz "Hello, world!\n"
+
+.text
+
+.global _start
+
+_start:
+# write(1, db, 14)
+mov $1, %rax  ; system call 1 is write
+mov $1, %rdi  ; file handle 1 is stdout
+lea (db), %rsi  ; address of string
+mov $14, %rdx  ; number of bytes
+syscall  ; invoke OS to print
+
+# exit(0)
+mov $60, %rax  ; system call 60 is exit
+xor %rdi, %rdi  ; we want return code 0
+syscall  ; invoke OS to exit
+```
+
+### Computing absolute value in x86
+
+```assembly
+push %rbp    ; push base pointer onto stack
+mov %rsp, %rbp   ; move out stack pointer onto the base pointer
+mov %edi,-0x4(%rbp)   ; argument 1 (x)
+cmpl $0x0,-0x4(%rbp)   ; compare if (x < 0)
+jns 1149 <abs+0x10>   ; if not jump to 1149
+negl -0x4(%rbp)   ; negate x (x = -x)
+mov -0x4(%rbp), %eax   ; (1149) move x into eax
+pop %rbp   ; pop base pointer
+retq   ; return x (%rax(
+```
+
 # Memory and Pointers
 
 ## Memory Model
