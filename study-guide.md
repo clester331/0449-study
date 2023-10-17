@@ -440,8 +440,77 @@ int *ip = 0x3C // 32b
 // pointers are 64b
 ```
 
-*ip = **bf**
-*(ip - 2) = *(ip - sizeof(int) * 2) = (ip - 8) = **6a**
-*ip-2 = 0x3C - 2 = **0x3A**
-sp = ip -> *(sp - 2) = **error** (no cast)
-(char **)ip - 2 = **0000 0000 0000 003B
+* ip = **bf**
+* (ip - 2) = *(ip - sizeof(int) * 2) = (ip - 8) = **6a**
+* ip-2 = 0x3C - 2 = **0x3A**
+* sp = ip -> *(sp - 2) = **error** (no cast)
+* (char **)ip - 2 = **0000 0000 0000 003B
+
+# Memory Management
+
+* When small gaps interfere with allocation, this is called fragmentation
+* When you allocate a lot of small things and free every other one, and then attempt to allocate a bigger thing:
+	*	Although there is technically enough memory, there is no continuous space, and our naive malloc will fail
+*	We can move things around with a defragmentation process/algorithm
+	* Pointers refering to data within a block must be updated
+ 	* When block move, pointers to anything within them must be updated	 	
+
+## Linked Lists
+
+* A linked list is a non-continuous data structure representing an ordered list
+* Each item in the linked list is represented by metadata called a node
+	* Indirectly refers to the actual data
+
+* Creation of a list occurs when one allocates a single node and tracks it in a pointer. This is the head of our list (first element)
+
+```C
+typedef struct _Node {
+	struct _Node* next;
+	char* data;
+}
+
+Node* list = (Node*)malloc(siezof(Node));
+list->next = NULL; // NULL is our end-of-list marker
+list->data = NULL; // Allocate/copy the data you want
+```
+
+* If we want to append an item we can add a node anywhere
+
+```C
+void append(Node* tail, const char* value) {
+	Node* node = (Node*)malloc(sizeof(Node));
+	node->next = NULL; // The new end of our list
+	tail->next = node; // We attach this node to the old last node
+	node->data = (char*)malloc(strnlen(value, 100) + 1);
+	strncpy(node->data, value, 100);
+}
+```
+
+* And if we update our append to take any node
+
+```C
+void linkedListAppend(Node* curNode, const char* value) {
+	Node* node = (Node*)malloc(sizeof(Node));
+	node->next = curNode->next;
+	curNode->next = node;
+	node->data = (char*)malloc(strnlen(value, 100) + 1);
+	strcpy(node->data, value);
+}
+```
+
+* The appeand always allocates the same amount
+* it always copies the same amount
+
+### Traversal
+
+* Accesing an array element is simple:
+	* arr[42] is the same as *(arr + 42) becuase its location is well known
+
+### Malloc Implementations
+
+* First fit: start at lowest address, find first available section
+	* Fast but small blocks clog up the works
+* Next-fit: Do "First-fit" but start where we last allocated
+	* Fast and spreads small blocks around better
+* Best-fit: laboriously look for the smallest available section to divide up
+	* Slow, but limits fragmentation   	  
